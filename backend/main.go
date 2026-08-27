@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -44,6 +46,15 @@ func main() {
 
 	// 5. Inisialisasi Router Gin
 	r := gin.Default()
+
+	// CORS: izinkan frontend React (Vite dev server) memanggil API ini dari origin berbeda
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// 6. Contoh route sederhana untuk cek server
 	r.GET("/ping", func(c *gin.Context) {

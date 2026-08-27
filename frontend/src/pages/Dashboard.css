@@ -1,0 +1,64 @@
+.dashboard-page {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px 32px;
+  text-align: left;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.dashboard-header p {
+  margin: 4px 0 0;
+  color: var(--text);
+}
+
+.dashboard-header button {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.dashboard-users table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-users th,
+.dashboard-users td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.dashboard-users th {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dashboard-users .auth-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  color: #dc2626;
+  font-size: 14px;
+}

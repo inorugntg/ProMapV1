@@ -54,6 +54,15 @@ body {
   margin: 0;
 }
 
+.page-loading {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
 #root {
   width: 1126px;
   max-width: 100%;
