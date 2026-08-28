@@ -5,11 +5,12 @@ import "gorm.io/gorm"
 // Perusahaan memiliki banyak Divisi, Project, dan User
 type Perusahaan struct {
 	gorm.Model
-	Nama     string    `json:"nama" gorm:"type:varchar(191);unique;not null"`
-	KodeUnik string    `json:"kode_unik" gorm:"type:varchar(191);unique;not null"`
-	Divisies []Divisi  `json:"divisi"`
-	Projects []Project `json:"projects"`
-	Users    []User    `json:"users"`
+	Nama               string    `json:"nama" gorm:"type:varchar(191);unique;not null"`
+	KodeUnik           string    `json:"kode_unik" gorm:"type:varchar(191);unique;not null"`
+	StatusSubscription string    `json:"status_subscription" gorm:"type:varchar(20);not null;default:'basic'"`
+	Divisies           []Divisi  `json:"divisi"`
+	Projects           []Project `json:"projects"`
+	Users              []User    `json:"users"`
 }
 
 // Divisi memiliki banyak User dan ActionPlan
@@ -17,6 +18,7 @@ type Divisi struct {
 	gorm.Model
 	PerusahaanID uint         `json:"perusahaan_id"`
 	Nama         string       `json:"nama" gorm:"type:varchar(191);not null"`
+	Deskripsi    string       `json:"deskripsi" gorm:"type:varchar(500)"`
 	Users        []User       `json:"users"`
 	ActionPlans  []ActionPlan `json:"action_plans" gorm:"foreignKey:DivisionID"`
 }
@@ -112,6 +114,20 @@ type Checklist struct {
 	PerusahaanID uint   `json:"perusahaan_id"`
 	NamaItem     string `json:"nama_item" gorm:"type:varchar(191);not null"`
 	Status       string `json:"status" gorm:"type:varchar(20);not null;default:'Not Done'"` // "Done" | "Not Done"
+}
+
+// Evidence adalah bukti penyelesaian yang diunggah PIC/Staff untuk sebuah Action Plan.
+type Evidence struct {
+	gorm.Model
+	ActionPlanID uint   `json:"action_plan_id" gorm:"not null"`
+	TaskID       uint   `json:"task_id"` // denormalisasi dari ActionPlan.TaskID
+	PerusahaanID uint   `json:"perusahaan_id"`
+	UserID       uint   `json:"user_id"` // User yang mengupload evidence
+	Judul        string `json:"judul" gorm:"type:varchar(191);not null"`
+	Deskripsi    string `json:"deskripsi" gorm:"type:varchar(500)"`
+	Link         string `json:"link" gorm:"type:varchar(500)"`                             // Link Google Drive / file
+	Status       string `json:"status" gorm:"type:varchar(20);not null;default:'Pending'"` // Pending, Approved, Rejected
+	CatatanAdmin string `json:"catatan_admin" gorm:"type:varchar(500)"`
 }
 
 // Proposal adalah ide dari Staff yang menunggu persetujuan Manager.

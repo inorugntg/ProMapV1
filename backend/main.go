@@ -36,6 +36,7 @@ func main() {
 		&models.Task{},
 		&models.ActionPlan{},
 		&models.Checklist{},
+		&models.Evidence{},
 		&models.Proposal{},
 	)
 	if err != nil {
@@ -45,20 +46,26 @@ func main() {
 
 	// 4. Inisialisasi Repository & Handler
 	userRepo := repository.NewUserRepository()
+	companyRepo := repository.NewCompanyRepository()
+	divisionRepo := repository.NewDivisionRepository()
 	projectRepo := repository.NewProjectRepository()
 	objectiveRepo := repository.NewObjectiveRepository()
 	taskRepo := repository.NewTaskRepository()
 	actionPlanRepo := repository.NewActionPlanRepository()
 	checklistRepo := repository.NewChecklistRepository()
+	evidenceRepo := repository.NewEvidenceRepository()
 	proposalRepo := repository.NewProposalRepository()
 
 	authHandler := handler.NewAuthHandler(userRepo)
 	userHandler := handler.NewUserHandler(userRepo)
+	companyHandler := handler.NewCompanyHandler(companyRepo)
+	divisionHandler := handler.NewDivisionHandler(divisionRepo, companyRepo)
 	projectHandler := handler.NewProjectHandler(projectRepo, userRepo)
 	objectiveHandler := handler.NewObjectiveHandler(objectiveRepo, projectRepo, userRepo)
 	taskHandler := handler.NewTaskHandler(taskRepo, objectiveRepo, projectRepo, userRepo)
 	actionPlanHandler := handler.NewActionPlanHandler(actionPlanRepo, taskRepo)
 	checklistHandler := handler.NewChecklistHandler(checklistRepo, actionPlanRepo)
+	evidenceHandler := handler.NewEvidenceHandler(evidenceRepo, actionPlanRepo)
 	proposalHandler := handler.NewProposalHandler(proposalRepo, projectRepo)
 
 	// 5. Inisialisasi Router Gin
@@ -98,6 +105,26 @@ func main() {
 			users.POST("", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), userHandler.CreateUser)
 			users.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), userHandler.UpdateUser)
 			users.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), userHandler.DeleteUser)
+		}
+
+		// Perusahaan (Company)
+		companies := api.Group("/companies")
+		companies.Use(middleware.AuthRequired())
+		{
+			companies.GET("", companyHandler.ListCompanies)
+			companies.POST("", middleware.RequireRole(utils.RoleSuperAdmin), companyHandler.CreateCompany)
+			companies.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin), companyHandler.UpdateCompany)
+			companies.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin), companyHandler.DeleteCompany)
+		}
+
+		// Divisi (Division)
+		divisions := api.Group("/divisions")
+		divisions.Use(middleware.AuthRequired())
+		{
+			divisions.GET("", divisionHandler.ListDivisions)
+			divisions.POST("", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), divisionHandler.CreateDivision)
+			divisions.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), divisionHandler.UpdateDivision)
+			divisions.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), divisionHandler.DeleteDivision)
 		}
 
 		// Project (Work Item level 1)
@@ -148,6 +175,16 @@ func main() {
 			checklists.POST("", checklistHandler.CreateChecklist)
 			checklists.PUT("/:id", checklistHandler.UpdateChecklist)
 			checklists.DELETE("/:id", checklistHandler.DeleteChecklist)
+		}
+
+		// Evidence (bukti penyelesaian yang diunggah PIC/Staff untuk sebuah Action Plan)
+		evidences := api.Group("/evidences")
+		evidences.Use(middleware.AuthRequired())
+		{
+			evidences.GET("", evidenceHandler.ListEvidences)
+			evidences.POST("", evidenceHandler.CreateEvidence)
+			evidences.PUT("/:id", evidenceHandler.UpdateEvidence)
+			evidences.DELETE("/:id", evidenceHandler.DeleteEvidence)
 		}
 
 		// Proposal (ide dari Staff, menunggu approve/reject Manager)
