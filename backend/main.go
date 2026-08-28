@@ -12,6 +12,7 @@ import (
 	"corporate-action-plan/backend/internal/handler"
 	"corporate-action-plan/backend/internal/middleware"
 	"corporate-action-plan/backend/internal/repository"
+	"corporate-action-plan/backend/internal/service"
 	"corporate-action-plan/backend/internal/utils"
 	"corporate-action-plan/backend/models"
 )
@@ -38,6 +39,7 @@ func main() {
 		&models.Checklist{},
 		&models.Evidence{},
 		&models.Proposal{},
+		&models.Notification{},
 	)
 	if err != nil {
 		log.Fatal("Gagal AutoMigrate: ", err)
@@ -67,6 +69,14 @@ func main() {
 	checklistHandler := handler.NewChecklistHandler(checklistRepo, actionPlanRepo)
 	evidenceHandler := handler.NewEvidenceHandler(evidenceRepo, actionPlanRepo)
 	proposalHandler := handler.NewProposalHandler(proposalRepo, projectRepo)
+
+	notificationService := service.NewNotificationService()
+	overdueService := service.NewOverdueService(notificationService)
+	dashboardService := service.NewDashboardService()
+
+	overdueHandler := handler.NewOverdueHandler(overdueService)
+	notificationHandler := handler.NewNotificationHandler(notificationService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	// 5. Inisialisasi Router Gin
 	r := gin.Default()
@@ -195,8 +205,54 @@ func main() {
 			proposals.POST("", middleware.RequireRole(utils.RoleStaff), proposalHandler.CreateProposal)
 			proposals.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), proposalHandler.UpdateProposal)
 		}
+
+		// Overdue (pengecekan status overdue Task & Action Plan)
+		overdue := api.Group("/overdue")
+		overdue.Use(middleware.AuthRequired())
+		{
+			overdue.POST("/check", middleware.RequireRole(utils.RoleSuperAdmin), overdueHandler.CheckOverdue)
+		}
+
+		// Notification (notifikasi in-app milik user yang login)
+		notifications := api.Group("/notifications")
+		notifications.Use(middleware.AuthRequired())
+		{
+			notifications.GET("", notificationHandler.ListNotifications)
+			notifications.POST("/read-all", notificationHandler.MarkAllRead)
+			notifications.PUT("/:id/read", notificationHandler.MarkRead)
+		}
+
+		// Dashboard (statistik ringkasan Task & Action Plan sesuai lingkup akses role)
+		dashboard := api.Group("/dashboard")
+		dashboard.Use(middleware.AuthRequired())
+		{
+			dashboard.GET("", dashboardHandler.GetDashboard)
+		}
 	}
 
-	// 8. Jalankan server di port 8080
+	// 8. Background worker: jalankan pengecekan overdue otomatis setiap hari jam 00:01
+	go runOverdueWorker(overdueService)
+
+	// 9. Jalankan server di port 8080
 	r.Run(":8080")
+}
+
+// runOverdueWorker menjalankan CheckAll() setiap hari tepat jam 00:01 waktu lokal server.
+// Dijalankan sebagai goroutine terpisah agar tidak memblokir server HTTP.
+func runOverdueWorker(overdueService *service.OverdueService) {
+	for {
+		now := time.Now()
+		next := time.Date(now.Year(), now.Month(), now.Day(), 0, 1, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.AddDate(0, 0, 1)
+		}
+		time.Sleep(time.Until(next))
+
+		overdueTasks, overdueActionPlans, err := overdueService.CheckAll()
+		if err != nil {
+			log.Println("Gagal menjalankan pengecekan overdue terjadwal:", err)
+			continue
+		}
+		log.Printf("Pengecekan overdue terjadwal selesai: %d task, %d action plan diubah menjadi Overdue\n", overdueTasks, overdueActionPlans)
+	}
 }

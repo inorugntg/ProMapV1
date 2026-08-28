@@ -145,3 +145,14 @@ type Proposal struct {
 	CreatedBy       *User  `json:"created_by,omitempty" gorm:"foreignKey:CreatedByID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ApprovedBy      *User  `json:"approved_by,omitempty" gorm:"foreignKey:ApprovedByID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
+
+// Notification adalah notifikasi in-app untuk seorang User (mis. saat Task/ActionPlan-nya
+// berubah status menjadi Overdue).
+type Notification struct {
+	gorm.Model
+	UserID  uint   `json:"user_id" gorm:"not null;index"`
+	Title   string `json:"title" gorm:"type:varchar(191);not null"`
+	Message string `json:"message" gorm:"type:varchar(500)"`
+	IsRead  bool   `json:"is_read" gorm:"not null;default:false"`
+	Type    string `json:"type" gorm:"type:varchar(50)"` // mis. "overdue_task", "overdue_action_plan"
+}
