@@ -32,7 +32,11 @@ func main() {
 		&models.Divisi{},
 		&models.User{},
 		&models.Project{},
+		&models.Objective{},
+		&models.Task{},
 		&models.ActionPlan{},
+		&models.Checklist{},
+		&models.Proposal{},
 	)
 	if err != nil {
 		log.Fatal("Gagal AutoMigrate: ", err)
@@ -41,8 +45,21 @@ func main() {
 
 	// 4. Inisialisasi Repository & Handler
 	userRepo := repository.NewUserRepository()
+	projectRepo := repository.NewProjectRepository()
+	objectiveRepo := repository.NewObjectiveRepository()
+	taskRepo := repository.NewTaskRepository()
+	actionPlanRepo := repository.NewActionPlanRepository()
+	checklistRepo := repository.NewChecklistRepository()
+	proposalRepo := repository.NewProposalRepository()
+
 	authHandler := handler.NewAuthHandler(userRepo)
 	userHandler := handler.NewUserHandler(userRepo)
+	projectHandler := handler.NewProjectHandler(projectRepo, userRepo)
+	objectiveHandler := handler.NewObjectiveHandler(objectiveRepo, projectRepo, userRepo)
+	taskHandler := handler.NewTaskHandler(taskRepo, objectiveRepo, projectRepo, userRepo)
+	actionPlanHandler := handler.NewActionPlanHandler(actionPlanRepo, taskRepo)
+	checklistHandler := handler.NewChecklistHandler(checklistRepo, actionPlanRepo)
+	proposalHandler := handler.NewProposalHandler(proposalRepo, projectRepo)
 
 	// 5. Inisialisasi Router Gin
 	r := gin.Default()
@@ -81,6 +98,65 @@ func main() {
 			users.POST("", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), userHandler.CreateUser)
 			users.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), userHandler.UpdateUser)
 			users.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), userHandler.DeleteUser)
+		}
+
+		// Project (Work Item level 1)
+		projects := api.Group("/projects")
+		projects.Use(middleware.AuthRequired())
+		{
+			projects.GET("", projectHandler.ListProjects)
+			projects.POST("", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), projectHandler.CreateProject)
+			projects.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), projectHandler.UpdateProject)
+			projects.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), projectHandler.DeleteProject)
+		}
+
+		// Objective (Work Item level 2, turunan Project -- dibutuhkan agar hierarki bisa dibentuk)
+		objectives := api.Group("/objectives")
+		objectives.Use(middleware.AuthRequired())
+		{
+			objectives.GET("", objectiveHandler.ListObjectives)
+			objectives.POST("", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), objectiveHandler.CreateObjective)
+			objectives.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), objectiveHandler.UpdateObjective)
+			objectives.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional), objectiveHandler.DeleteObjective)
+		}
+
+		// Task (Work Item level 3: delegasi resmi Manager/Admin, atau Personal Task milik PIC/Staff)
+		tasks := api.Group("/tasks")
+		tasks.Use(middleware.AuthRequired())
+		{
+			tasks.GET("", taskHandler.ListTasks)
+			tasks.POST("", taskHandler.CreateTask)
+			tasks.PUT("/:id", taskHandler.UpdateTask)
+			tasks.DELETE("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), taskHandler.DeleteTask)
+		}
+
+		// Action Plan (Work Item level 4, dibuat oleh pemilik Task)
+		actionPlans := api.Group("/action-plans")
+		actionPlans.Use(middleware.AuthRequired())
+		{
+			actionPlans.GET("", actionPlanHandler.ListActionPlans)
+			actionPlans.POST("", actionPlanHandler.CreateActionPlan)
+			actionPlans.PUT("/:id", actionPlanHandler.UpdateActionPlan)
+			actionPlans.DELETE("/:id", actionPlanHandler.DeleteActionPlan)
+		}
+
+		// Checklist (Work Item level 5, rincian terkecil dalam Action Plan)
+		checklists := api.Group("/checklists")
+		checklists.Use(middleware.AuthRequired())
+		{
+			checklists.GET("", checklistHandler.ListChecklists)
+			checklists.POST("", checklistHandler.CreateChecklist)
+			checklists.PUT("/:id", checklistHandler.UpdateChecklist)
+			checklists.DELETE("/:id", checklistHandler.DeleteChecklist)
+		}
+
+		// Proposal (ide dari Staff, menunggu approve/reject Manager)
+		proposals := api.Group("/proposals")
+		proposals.Use(middleware.AuthRequired())
+		{
+			proposals.GET("", proposalHandler.ListProposals)
+			proposals.POST("", middleware.RequireRole(utils.RoleStaff), proposalHandler.CreateProposal)
+			proposals.PUT("/:id", middleware.RequireRole(utils.RoleSuperAdmin, utils.RoleAdminOperasional, utils.RoleManager), proposalHandler.UpdateProposal)
 		}
 	}
 
