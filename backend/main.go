@@ -73,10 +73,14 @@ func main() {
 	notificationService := service.NewNotificationService()
 	overdueService := service.NewOverdueService(notificationService)
 	dashboardService := service.NewDashboardService()
+	kanbanService := service.NewKanbanService()
+	calendarService := service.NewCalendarService()
 
 	overdueHandler := handler.NewOverdueHandler(overdueService)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
+	kanbanHandler := handler.NewKanbanHandler(kanbanService, taskRepo, actionPlanRepo)
+	calendarHandler := handler.NewCalendarHandler(calendarService)
 
 	// 5. Inisialisasi Router Gin
 	r := gin.Default()
@@ -227,6 +231,21 @@ func main() {
 		dashboard.Use(middleware.AuthRequired())
 		{
 			dashboard.GET("", dashboardHandler.GetDashboard)
+		}
+
+		// Kanban (papan Task & Action Plan per status, untuk tampilan drag-and-drop)
+		kanban := api.Group("/kanban")
+		kanban.Use(middleware.AuthRequired())
+		{
+			kanban.GET("", kanbanHandler.GetBoard)
+			kanban.PUT("/:id/status", kanbanHandler.UpdateStatus)
+		}
+
+		// Calendar (Task & Action Plan berdasarkan start_date/end_date)
+		calendar := api.Group("/calendar")
+		calendar.Use(middleware.AuthRequired())
+		{
+			calendar.GET("", calendarHandler.GetEvents)
 		}
 	}
 
