@@ -131,7 +131,7 @@ func (h *KanbanHandler) updateActionPlanStatus(c *gin.Context, id uint, status s
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar perusahaan Anda"})
 			return
 		}
-		if auth.Role == utils.RoleManager && plan.DivisionID != auth.DivisiID {
+		if auth.Role == utils.RoleManager && (plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar divisi Anda"})
 			return
 		}

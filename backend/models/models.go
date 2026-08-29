@@ -20,7 +20,7 @@ type Divisi struct {
 	Nama         string       `json:"nama" gorm:"type:varchar(191);not null"`
 	Deskripsi    string       `json:"deskripsi" gorm:"type:varchar(500)"`
 	Users        []User       `json:"users"`
-	ActionPlans  []ActionPlan `json:"action_plans" gorm:"foreignKey:DivisionID"`
+	ActionPlans  []ActionPlan `json:"action_plans" gorm:"foreignKey:DivisiID"`
 }
 
 // User bisa jadi Bawahan atau Atasan (Self-Referencing)
@@ -94,7 +94,7 @@ type ActionPlan struct {
 	gorm.Model
 	TaskID       uint        `json:"task_id" gorm:"not null"`
 	UserID       uint        `json:"user_id"` // PIC/Staff pembuat action plan
-	DivisionID   uint        `json:"division_id"`
+	DivisiID     *uint       `json:"divisi_id"`
 	PerusahaanID uint        `json:"perusahaan_id"`
 	Tugas        string      `json:"tugas" gorm:"type:varchar(191);not null"`
 	OutcomeKPI   string      `json:"outcome_kpi" gorm:"type:varchar(500)"`
@@ -155,4 +155,27 @@ type Notification struct {
 	Message string `json:"message" gorm:"type:varchar(500)"`
 	IsRead  bool   `json:"is_read" gorm:"not null;default:false"`
 	Type    string `json:"type" gorm:"type:varchar(50)"` // mis. "overdue_task", "overdue_action_plan"
+}
+
+// Tamu (Guest/Lead) menampung calon pelanggan pada Guest Mode & masa Trial, sebelum resmi
+// dikonversi menjadi Perusahaan berlangganan.
+type Tamu struct {
+	gorm.Model
+	Email          string `json:"email" gorm:"type:varchar(191);uniqueIndex;not null"`
+	NoTelp         string `json:"no_telp" gorm:"type:varchar(50)"`
+	Status         string `json:"status" gorm:"type:varchar(20);not null;default:'Trial'"` // mis. Trial, Expired, Converted
+	TrialStartDate string `json:"trial_start_date" gorm:"type:varchar(50)"`
+	TrialEndDate   string `json:"trial_end_date" gorm:"type:varchar(50)"`
+	PerusahaanID   *uint  `json:"perusahaan_id"` // diisi setelah Tamu dikonversi menjadi Perusahaan
+}
+
+// ActivityLog mencatat jejak aktivitas user (audit trail) untuk keperluan keamanan & histori.
+type ActivityLog struct {
+	gorm.Model
+	PerusahaanID *uint  `json:"perusahaan_id"`
+	UserID       *uint  `json:"user_id"`
+	NamaUser     string `json:"nama_user" gorm:"type:varchar(191)"`
+	Aksi         string `json:"aksi" gorm:"type:varchar(100);not null"` // mis. "CREATE_PROJECT", "UPDATE_STATUS"
+	Deskripsi    string `json:"deskripsi" gorm:"type:varchar(500)"`
+	IPAddress    string `json:"ip_address" gorm:"type:varchar(50)"`
 }

@@ -40,6 +40,8 @@ func main() {
 		&models.Evidence{},
 		&models.Proposal{},
 		&models.Notification{},
+		&models.Tamu{},
+		&models.ActivityLog{},
 	)
 	if err != nil {
 		log.Fatal("Gagal AutoMigrate: ", err)

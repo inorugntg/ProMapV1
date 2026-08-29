@@ -33,17 +33,17 @@ func (r *ActionPlanRepository) FindByID(id uint) (*models.ActionPlan, error) {
 
 // List mengambil daftar action plan dengan filter multi-tenant, divisi, pemilik, dan task.
 // perusahaanID = 0 -> semua perusahaan (Super Admin).
-// divisionID = 0 -> tidak difilter divisi.
+// divisiID = 0 -> tidak difilter divisi.
 // userID = 0 -> tidak difilter pemilik (dipakai Manager/Admin/SuperAdmin).
 // taskID = 0 -> tidak difilter task tertentu.
-func (r *ActionPlanRepository) List(perusahaanID uint, divisionID uint, userID uint, taskID uint) ([]models.ActionPlan, error) {
+func (r *ActionPlanRepository) List(perusahaanID uint, divisiID uint, userID uint, taskID uint) ([]models.ActionPlan, error) {
 	var plans []models.ActionPlan
 	query := config.DB.Model(&models.ActionPlan{})
 	if perusahaanID > 0 {
 		query = query.Where("perusahaan_id = ?", perusahaanID)
 	}
-	if divisionID > 0 {
-		query = query.Where("division_id = ?", divisionID)
+	if divisiID > 0 {
+		query = query.Where("divisi_id = ?", divisiID)
 	}
 	if userID > 0 {
 		query = query.Where("user_id = ?", userID)

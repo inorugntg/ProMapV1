@@ -29,7 +29,7 @@ func (h *ChecklistHandler) authorizeActionPlanAccess(auth authContext, plan *mod
 	if auth.Role != utils.RoleSuperAdmin && plan.PerusahaanID != auth.PerusahaanID {
 		return false
 	}
-	if auth.Role == utils.RoleManager && plan.DivisionID != auth.DivisiID {
+	if auth.Role == utils.RoleManager && (plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID) {
 		return false
 	}
 	return true

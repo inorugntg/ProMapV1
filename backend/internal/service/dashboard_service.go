@@ -160,7 +160,7 @@ func (s *DashboardService) getProgressPerPIC(role string, perusahaanID, divisiID
 	case role == utils.RoleAdminOperasional:
 		query = query.Where("ap.perusahaan_id = ?", perusahaanID)
 	case role == utils.RoleManager:
-		query = query.Where("ap.perusahaan_id = ? AND ap.division_id = ?", perusahaanID, divisiID)
+		query = query.Where("ap.perusahaan_id = ? AND ap.divisi_id = ?", perusahaanID, divisiID)
 	default:
 		query = query.Where("ap.perusahaan_id = ? AND ap.user_id = ?", perusahaanID, userID)
 	}

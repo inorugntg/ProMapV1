@@ -30,7 +30,7 @@ func taskScopeQuery(role string, perusahaanID, divisiID, userID uint) *gorm.DB {
 }
 
 // actionPlanScopeQuery sama seperti taskScopeQuery tapi untuk Action Plan (field
-// division_id/user_id, bukan divisi_id/assignee_id).
+// divisi_id/user_id, bukan divisi_id/assignee_id seperti Task).
 func actionPlanScopeQuery(role string, perusahaanID, divisiID, userID uint) *gorm.DB {
 	query := config.DB.Model(&models.ActionPlan{})
 
@@ -39,7 +39,7 @@ func actionPlanScopeQuery(role string, perusahaanID, divisiID, userID uint) *gor
 	case role == utils.RoleAdminOperasional:
 		query = query.Where("perusahaan_id = ?", perusahaanID)
 	case role == utils.RoleManager:
-		query = query.Where("perusahaan_id = ? AND division_id = ?", perusahaanID, divisiID)
+		query = query.Where("perusahaan_id = ? AND divisi_id = ?", perusahaanID, divisiID)
 	default:
 		query = query.Where("perusahaan_id = ? AND user_id = ?", perusahaanID, userID)
 	}

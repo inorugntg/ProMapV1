@@ -104,7 +104,7 @@ func (h *EvidenceHandler) CreateEvidence(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Anda hanya dapat membuat evidence untuk action plan milik Anda sendiri"})
 		return
 	}
-	if auth.Role == utils.RoleManager && plan.DivisionID != auth.DivisiID {
+	if auth.Role == utils.RoleManager && (plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat membuat evidence di luar divisi Anda"})
 		return
 	}
@@ -191,7 +191,7 @@ func (h *EvidenceHandler) UpdateEvidence(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memvalidasi action plan induk"})
 				return
 			}
-			if plan.DivisionID != auth.DivisiID {
+			if plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID {
 				c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola evidence di luar divisi Anda"})
 				return
 			}

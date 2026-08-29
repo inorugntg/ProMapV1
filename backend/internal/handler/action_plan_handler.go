@@ -28,7 +28,7 @@ func (h *ActionPlanHandler) ListActionPlans(c *gin.Context) {
 	auth := getAuthContext(c)
 
 	filterPerusahaanID := auth.PerusahaanID
-	var filterDivisionID uint
+	var filterDivisiID uint
 	var filterUserID uint
 
 	switch {
@@ -37,7 +37,7 @@ func (h *ActionPlanHandler) ListActionPlans(c *gin.Context) {
 	case auth.Role == utils.RoleAdminOperasional:
 		// seluruh divisi di perusahaannya
 	case auth.Role == utils.RoleManager:
-		filterDivisionID = auth.DivisiID
+		filterDivisiID = auth.DivisiID
 	default: // PIC / Staff
 		filterUserID = auth.UserID
 	}
@@ -52,7 +52,7 @@ func (h *ActionPlanHandler) ListActionPlans(c *gin.Context) {
 		taskID = uint(id)
 	}
 
-	plans, err := h.actionPlanRepo.List(filterPerusahaanID, filterDivisionID, filterUserID, taskID)
+	plans, err := h.actionPlanRepo.List(filterPerusahaanID, filterDivisiID, filterUserID, taskID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data action plan"})
 		return
@@ -103,15 +103,10 @@ func (h *ActionPlanHandler) CreateActionPlan(c *gin.Context) {
 		return
 	}
 
-	var divisionID uint
-	if task.DivisiID != nil {
-		divisionID = *task.DivisiID
-	}
-
 	plan := models.ActionPlan{
 		TaskID:       task.ID,
 		UserID:       auth.UserID,
-		DivisionID:   divisionID,
+		DivisiID:     task.DivisiID,
 		PerusahaanID: task.PerusahaanID,
 		Tugas:        req.Tugas,
 		OutcomeKPI:   req.OutcomeKPI,
@@ -203,7 +198,7 @@ func (h *ActionPlanHandler) UpdateActionPlan(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar perusahaan Anda"})
 			return
 		}
-		if auth.Role == utils.RoleManager && plan.DivisionID != auth.DivisiID {
+		if auth.Role == utils.RoleManager && (plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar divisi Anda"})
 			return
 		}
@@ -272,7 +267,7 @@ func (h *ActionPlanHandler) DeleteActionPlan(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar perusahaan Anda"})
 			return
 		}
-		if auth.Role == utils.RoleManager && plan.DivisionID != auth.DivisiID {
+		if auth.Role == utils.RoleManager && (plan.DivisiID == nil || *plan.DivisiID != auth.DivisiID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Tidak dapat mengelola action plan di luar divisi Anda"})
 			return
 		}
